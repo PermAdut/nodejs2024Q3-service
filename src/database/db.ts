@@ -9,6 +9,7 @@ import {
   CreateTrackDto,
   CreateUserDto,
   UpdateAlbumDto,
+  UpdateArtistDto,
   UpdatePasswordDto,
   UpdateTrackDto,
 } from 'src/utils/requestBodies';
@@ -64,24 +65,18 @@ export async function addUser(
   if (!user.login || !user.password) {
     throw new Error('Body does not contain required fields');
   }
-  //const isUser = users.findIndex((el) => el.login == user.login);
-  const isUser = -1;
-  if (isUser == -1) {
-    const timestamp = Date.now();
-    const newUser: User = {
-      id: v4(),
-      login: user.login,
-      password: await hash(user.password, SALT),
-      version: 1,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    };
-    users.push(newUser);
-    const { password, ...responseAns } = newUser;
-    return responseAns;
-  } else {
-    throw new Error('User already exists');
-  }
+  const timestamp = Date.now();
+  const newUser: User = {
+    id: v4(),
+    login: user.login,
+    password: await hash(user.password, SALT),
+    version: 1,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+  users.push(newUser);
+  const { password, ...responseAns } = newUser;
+  return responseAns;
 }
 
 export async function updateUserPass(
@@ -208,30 +203,58 @@ export async function getArtistById(id: string): Promise<Artist> {
   }
 }
 
-export async function createArtist(artist: CreateArtistDto): Promise<void> {
+export async function createArtist(artist: CreateArtistDto): Promise<Artist> {
+  if (!artist.name || !artist.grammy) {
+    throw new Error('body doest not contain required fields');
+  }
   const id: string = v4();
   const newArtist: Artist = {
     id: id,
     ...artist,
   };
   artists.push(newArtist);
+  return newArtist;
 }
 
-export async function deleteArtist(id: string) {
+export async function deleteArtist(id: string): Promise<Artist> {
   const isMatch = isUUID(id);
   if (!isMatch) {
     throw new Error('Invalid uuid');
   }
   const artistIndex = artists.findIndex((el) => el.id == id);
   if (artistIndex != -1) {
+    const artist = artists[artistIndex];
     artists.splice(artistIndex, 1);
     await clearFavoutires(id, FavoritesType.Artist);
+    tracks.forEach((el) => {
+      if (el.artistId === artist.id) {
+        el.artistId = null;
+      }
+    });
+    albums.forEach((el) => {
+      if (el.artistId === artist.id) {
+        el.artistId = null;
+      }
+    });
+    return artist;
   } else {
     throw new Error('Artist not found');
   }
 }
 
-export async function updateArtist(id: string, artist: UpdatePasswordDto) {
+export async function updateArtist(
+  id: string,
+  artist: UpdateArtistDto,
+): Promise<Artist> {
+  const keys = Object.keys(artist);
+  if (
+    !keys.includes('name') ||
+    !keys.includes('grammy') ||
+    typeof artist.name != 'string' ||
+    typeof artist.grammy != 'boolean'
+  ) {
+    throw new Error('body doest not contain required fields');
+  }
   const isMatch = isUUID(id);
   if (!isMatch) {
     throw new Error('Invalid uuid');
@@ -239,6 +262,7 @@ export async function updateArtist(id: string, artist: UpdatePasswordDto) {
   const findArtist = artists.find((el) => el.id == id);
   if (findArtist) {
     Object.assign(findArtist, artist);
+    return findArtist;
   } else {
     throw new Error('Artist not found');
   }
@@ -263,30 +287,59 @@ export async function getAlbumById(id: string): Promise<Album> {
   }
 }
 
-export async function createAlbum(album: CreateAlbumDto) {
+export async function createAlbum(album: CreateAlbumDto): Promise<Album> {
+  const keys = Object.keys(album);
+  if (
+    !keys.includes('artistId') ||
+    !keys.includes('name') ||
+    !keys.includes('year')
+  ) {
+    throw new Error('body doest not contain required fields');
+  }
   const id = v4();
   const newAlbum: Album = {
     id: id,
     ...album,
   };
   albums.push(newAlbum);
+  return newAlbum;
 }
 
-export async function deleteAlbum(id: string) {
+export async function deleteAlbum(id: string): Promise<Album> {
   const isMatch = isUUID(id);
   if (!isMatch) {
     throw new Error('Invalid uuid');
   }
   const albumId = albums.findIndex((el) => el.id == id);
   if (albumId != -1) {
+    const alb = albums[albumId];
     albums.splice(albumId, 1);
     await clearFavoutires(id, FavoritesType.Album);
+    tracks.forEach((el) => {
+      if (el.albumId === alb.id) {
+        el.albumId = null;
+      }
+    });
+    return alb;
   } else {
     throw new Error('Album not found');
   }
 }
 
-export async function updateAlbum(id: string, album: UpdateAlbumDto) {
+export async function updateAlbum(
+  id: string,
+  album: UpdateAlbumDto,
+): Promise<Album> {
+  const keys = Object.keys(album);
+  if (
+    !keys.includes('artistId') ||
+    !keys.includes('name') ||
+    !keys.includes('year') ||
+    typeof album.year != 'number' ||
+    typeof album.name != 'string'
+  ) {
+    throw new Error('body doest not contain required fields');
+  }
   const isMatch = isUUID(id);
   if (!isMatch) {
     throw new Error('Invalid uuid');
@@ -294,6 +347,7 @@ export async function updateAlbum(id: string, album: UpdateAlbumDto) {
   const findAlbum = albums.find((el) => el.id == id);
   if (findAlbum) {
     Object.assign(findAlbum, album);
+    return findAlbum;
   } else {
     throw new Error('Album not found');
   }
@@ -361,42 +415,45 @@ export async function deleteFavsArtist(id: string) {
   }
 }
 
-export async function addFavTrack(id: string) {
+export async function addFavTrack(id: string): Promise<Track> {
   const isMatch = isUUID(id);
   if (!isMatch) {
     throw new Error('Invalid uuid');
   }
-  const track = await getTrackById(id);
-  if (track) {
+  try {
+    const track = await getTrackById(id);
     favourites.tracks.push(track.id);
-  } else {
+    return track;
+  } catch {
     throw new Error('Invalid track');
   }
 }
 
-export async function addFavAlbum(id: string) {
+export async function addFavAlbum(id: string): Promise<Album> {
   const isMatch = isUUID(id);
   if (!isMatch) {
     throw new Error('Invalid uuid');
   }
-  const album = await getAlbumById(id);
-  if (album) {
+  try {
+    const album = await getAlbumById(id);
     favourites.albums.push(album.id);
-  } else {
-    throw new Error('Invalid track');
+    return album;
+  } catch {
+    throw new Error('Invalid album');
   }
 }
 
-export async function addFavArtist(id: string) {
+export async function addFavArtist(id: string): Promise<Artist> {
   const isMatch = isUUID(id);
   if (!isMatch) {
     throw new Error('Invalid uuid');
   }
-  const artist = await getArtistById(id);
-  if (artist) {
+  try {
+    const artist = await getArtistById(id);
     favourites.artists.push(artist.id);
-  } else {
-    throw new Error('Invalid track');
+    return artist;
+  } catch {
+    throw new Error('Invalid artist');
   }
 }
 
