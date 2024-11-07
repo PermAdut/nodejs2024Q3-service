@@ -7,3 +7,8 @@ export interface FavoritesResponse {
   albums: Album[];
   tracks: Track[];
 }
+
+export interface GetResponse {
+  message: string;
+  data: unknown;
+}

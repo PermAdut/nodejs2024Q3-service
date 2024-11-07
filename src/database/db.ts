@@ -13,13 +13,16 @@ import {
   UpdateTrackDto,
 } from 'src/utils/requestBodies';
 import { v4 } from 'uuid';
-import { compare, hash } from 'bcrypt';
+import { compare, genSalt, hash } from 'bcrypt';
 import { config } from 'dotenv';
 import { isUUID } from 'class-validator';
 import { FavoritesResponse } from 'src/utils/responseBodies';
 config();
-const SALT = process.env.CRYPT_SALT || 10;
-
+const SALTVAL: string = process.env.CRYPT_SALT;
+let SALT;
+(async () => {
+  SALT = await genSalt(parseInt(SALTVAL));
+})();
 const users: User[] = [];
 const artists: Artist[] = [];
 const tracks: Track[] = [];
@@ -29,6 +32,12 @@ const favourites: Favorites = {
   albums: [],
   artists: [],
 };
+
+enum FavoritesType {
+  Artist = 'Artist',
+  Album = 'Album',
+  Track = 'Track',
+}
 
 // UserMethods
 
@@ -49,8 +58,14 @@ export async function getUserById(id: string): Promise<User> {
   }
 }
 
-export async function addUser(user: CreateUserDto): Promise<boolean> {
-  const isUser = users.findIndex((el) => el.login == user.login);
+export async function addUser(
+  user: CreateUserDto,
+): Promise<Omit<User, 'password'>> {
+  if (!user.login || !user.password) {
+    throw new Error('Body does not contain required fields');
+  }
+  //const isUser = users.findIndex((el) => el.login == user.login);
+  const isUser = -1;
   if (isUser == -1) {
     const timestamp = Date.now();
     const newUser: User = {
@@ -62,15 +77,20 @@ export async function addUser(user: CreateUserDto): Promise<boolean> {
       updatedAt: timestamp,
     };
     users.push(newUser);
+    const { password, ...responseAns } = newUser;
+    return responseAns;
   } else {
-    return false;
+    throw new Error('User already exists');
   }
 }
 
 export async function updateUserPass(
   id: string,
   data: UpdatePasswordDto,
-): Promise<boolean> {
+): Promise<Omit<User, 'password'>> {
+  if (!data.newPassword || !data.oldPassword) {
+    throw new Error('Invalid body');
+  }
   const isMatch = isUUID(id, 4);
   if (!isMatch) {
     throw new Error('Invalid uuid');
@@ -79,15 +99,16 @@ export async function updateUserPass(
   if (!user) {
     throw new Error('User not found');
   }
-
-  const isMatchPass = compare(data.oldPassword, user.password);
+  const isMatchPass = await compare(data.oldPassword, user.password);
   if (!isMatchPass) {
     throw new Error('Invalid password');
   }
-
+  const timestamp = Date.now();
   user.password = await hash(data.newPassword, SALT);
   user.version++;
-  return true;
+  user.updatedAt = timestamp;
+  const { password, ...record } = user;
+  return record;
 }
 
 export async function deleteUser(id: string): Promise<boolean> {
@@ -152,6 +173,7 @@ export async function deleteTrack(id: string) {
   const trackId = tracks.findIndex((el) => el.id == id);
   if (trackId != -1) {
     tracks.splice(trackId, 1);
+    await clearFavoutires(id, FavoritesType.Track);
   } else {
     throw new Error('Track not found');
   }
@@ -193,6 +215,7 @@ export async function deleteArtist(id: string) {
   const artistIndex = artists.findIndex((el) => el.id == id);
   if (artistIndex != -1) {
     artists.splice(artistIndex, 1);
+    await clearFavoutires(id, FavoritesType.Artist);
   } else {
     throw new Error('Artist not found');
   }
@@ -247,6 +270,7 @@ export async function deleteAlbum(id: string) {
   const albumId = albums.findIndex((el) => el.id == id);
   if (albumId != -1) {
     albums.splice(albumId, 1);
+    await clearFavoutires(id, FavoritesType.Album);
   } else {
     throw new Error('Album not found');
   }
@@ -363,5 +387,28 @@ export async function addFavArtist(id: string) {
     favourites.artists.push(artist.id);
   } else {
     throw new Error('Invalid track');
+  }
+}
+
+async function clearFavoutires(id: string, type: FavoritesType): Promise<void> {
+  switch (type) {
+    case FavoritesType.Artist:
+      const artistIndex = favourites.artists.findIndex((el) => el == id);
+      if (artistIndex != -1) {
+        favourites.artists.splice(artistIndex, 1);
+      }
+      break;
+    case FavoritesType.Album:
+      const albumIndex = favourites.albums.findIndex((el) => el == id);
+      if (albumIndex != -1) {
+        favourites.albums.splice(albumIndex, 1);
+      }
+      break;
+    case FavoritesType.Track:
+      const trackIndex = favourites.tracks.findIndex((el) => el == id);
+      if (trackIndex != -1) {
+        favourites.tracks.splice(trackIndex, 1);
+      }
+      break;
   }
 }
