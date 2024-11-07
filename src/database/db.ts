@@ -143,16 +143,23 @@ export async function getTrackById(id: string): Promise<Track> {
   }
 }
 
-export async function addTrack(track: CreateTrackDto): Promise<void> {
+export async function addTrack(track: CreateTrackDto): Promise<Track> {
   const id = v4();
+  if (!track.name || !track.duration) {
+    throw new Error('body doest not contain required fields');
+  }
   const newTrack: Track = {
     id: id,
     ...track,
   };
   tracks.push(newTrack);
+  return newTrack;
 }
 
 export async function updateTrack(id: string, track: UpdateTrackDto) {
+  if (!track.name || !track.duration) {
+    throw new Error('body doest not contain required fields');
+  }
   const isMatch = isUUID(id);
   if (!isMatch) {
     throw new Error('Invalid uuid');
@@ -162,18 +169,21 @@ export async function updateTrack(id: string, track: UpdateTrackDto) {
     throw new Error('Track not found');
   } else {
     Object.assign(findTrack, track);
+    return findTrack;
   }
 }
 
-export async function deleteTrack(id: string) {
+export async function deleteTrack(id: string): Promise<Track> {
   const isMatch = isUUID(id);
   if (!isMatch) {
     throw new Error('Invalid uuid');
   }
   const trackId = tracks.findIndex((el) => el.id == id);
   if (trackId != -1) {
+    const result = tracks[trackId];
     tracks.splice(trackId, 1);
     await clearFavoutires(id, FavoritesType.Track);
+    return result;
   } else {
     throw new Error('Track not found');
   }
