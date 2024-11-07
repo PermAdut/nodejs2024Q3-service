@@ -16,7 +16,7 @@ import {
   getTracks as getTracksFromDB,
   updateTrack,
 } from 'src/database/db';
-import { Request, response, Response } from 'express';
+import { Request, Response } from 'express';
 import { CreateTrackDto, UpdateTrackDto } from 'src/utils/requestBodies';
 @Controller('track')
 export class TrackController {

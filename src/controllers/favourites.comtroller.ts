@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, Param, Post, Req, Res } from '@nestjs/common';
+import { Controller, Delete, Get, Param, Post, Res } from '@nestjs/common';
 import { Response } from 'express';
 import {
   addFavAlbum,
