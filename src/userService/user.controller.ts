@@ -33,9 +33,9 @@ export class UserController {
       response.status(200).json(user).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
-        response.status(400).send();
+        response.status(400).json('Invalid uuid').send();
       } else if (err.message == 'User not found') {
-        response.status(404).send();
+        response.status(404).json('User not found').send();
       }
     }
   }
@@ -47,8 +47,11 @@ export class UserController {
       const newUser = await addUserToDB(body);
       response.status(201).json(newUser).send();
     } catch (err) {
-      if (err.message === 'Body does not contain required fields') {
-        return response.status(400).send();
+      if (err.message === 'body does not contain required fields') {
+        return response
+          .status(400)
+          .json('body does not contain required fields')
+          .send();
       }
       response.status(500).send();
     }
@@ -62,19 +65,18 @@ export class UserController {
   ) {
     try {
       const body = request.body as unknown as UpdatePasswordDto;
-      console.log(request.body);
       const record = await updateUserFromDB(params.id, body);
       response.status(200).json(record).send();
     } catch (err) {
       switch (err.message) {
         case 'Invalid uuid':
-          response.status(400).send();
+          response.status(400).json('Invalid uuid').send();
           break;
         case 'User not found':
-          response.status(404).send();
+          response.status(404).json('User not found').send();
           break;
         case 'Invalid password':
-          response.status(403).send();
+          response.status(403).json('Invalid password').send();
           break;
         default:
           response.status(400).send();
@@ -89,9 +91,9 @@ export class UserController {
       response.status(204).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
-        response.status(400).send();
+        response.status(400).json('Invalid uuid').send();
       } else if (err.message == 'User not found') {
-        response.status(404).send();
+        response.status(404).json('User not found').send();
       }
     }
   }

@@ -32,9 +32,9 @@ export class ArtistController {
       response.status(200).json(artist).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
-        response.status(400).send();
+        response.status(400).json('Invalid uuid').send();
       } else if (err.message == 'Artist not found') {
-        response.status(404).send();
+        response.status(404).json('Artist not found').send();
       }
     }
   }
@@ -47,7 +47,10 @@ export class ArtistController {
       response.status(201).json(artist).send();
     } catch (err) {
       if (err.message == 'body doest not contain required fields') {
-        response.status(400).send();
+        response
+          .status(400)
+          .json('body doest not contain required fields')
+          .send();
       }
     }
   }
@@ -64,11 +67,14 @@ export class ArtistController {
       response.status(200).json(updatedBody).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
-        response.status(400).send();
+        response.status(400).json('Invalid uuid').send();
       } else if (err.message == 'Artist not found') {
-        response.status(404).send();
+        response.status(404).json('Artist not found').send();
       } else if (err.message == 'body doest not contain required fields') {
-        response.status(400).send();
+        response
+          .status(400)
+          .json('body doest not contain required fields')
+          .send();
       }
     }
   }
@@ -80,9 +86,9 @@ export class ArtistController {
       response.status(204).json(deletedArtist).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
-        response.status(400).send();
+        response.status(400).json('Invalid uuid').send();
       } else if (err.message == 'Artist not found') {
-        response.status(404).send();
+        response.status(404).json('Artist not found').send();
       }
     }
   }

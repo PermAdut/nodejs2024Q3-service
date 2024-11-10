@@ -1,23 +1,22 @@
 import { Module, MiddlewareConsumer } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UserController } from './controllers/user.controller';
 import { resMiddlware } from './middleware/resHeaders.middleware';
-import { TrackController } from './controllers/track.controller';
-import { ArtistController } from './controllers/artist.controller';
-import { AlbumController } from './controllers/album.controller';
-import { FavController } from './controllers/favourites.comtroller';
+import { UserModule } from './userService/user.module';
+import { TrackModule } from './trackService/track.module';
+import { FavouritesModule } from './favouritesService/favourites.module';
+import { AlbumModule } from './albumService/album.module';
+import { ArtistModule } from './artistService/artist.module';
 
 @Module({
-  imports: [],
-  controllers: [
-    AppController,
-    UserController,
-    TrackController,
-    ArtistController,
-    AlbumController,
-    FavController,
+  imports: [
+    UserModule,
+    TrackModule,
+    FavouritesModule,
+    AlbumModule,
+    ArtistModule,
   ],
+  controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {

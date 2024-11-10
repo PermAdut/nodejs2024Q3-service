@@ -63,7 +63,7 @@ export async function addUser(
   user: CreateUserDto,
 ): Promise<Omit<User, 'password'>> {
   if (!user.login || !user.password) {
-    throw new Error('Body does not contain required fields');
+    throw new Error('body does not contain required fields');
   }
   const timestamp = Date.now();
   const newUser: User = {

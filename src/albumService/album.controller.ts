@@ -33,9 +33,9 @@ export class AlbumController {
       response.status(200).json(album).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
-        response.status(400).send();
+        response.status(400).json('Invalid uuid').send();
       } else if (err.message == 'Album not found') {
-        response.status(404).send();
+        response.status(404).json('Album not found').send();
       }
     }
   }
@@ -48,7 +48,10 @@ export class AlbumController {
       response.status(201).json(album).send();
     } catch (err) {
       if (err.message == 'body doest not contain required fields') {
-        response.status(400).send();
+        response
+          .status(400)
+          .json('body doest not contain required fields')
+          .send();
       }
     }
   }
@@ -65,11 +68,14 @@ export class AlbumController {
       response.status(200).json(album).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
-        response.status(400).send();
+        response.status(400).json('Invalid uuid').send();
       } else if (err.message == 'Album not found') {
-        response.status(404).send();
+        response.status(404).json('Album not found').send();
       } else if (err.message == 'body doest not contain required fields') {
-        response.status(400).send();
+        response
+          .status(400)
+          .json('body doest not contain required fields')
+          .send();
       }
     }
   }
@@ -81,9 +87,9 @@ export class AlbumController {
       response.status(204).json(delAlbum).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
-        response.status(400).send();
+        response.status(400).json('Invalid uuid').send();
       } else if (err.message == 'Album not found') {
-        response.status(404).send();
+        response.status(404).json('Album not found').send();
       }
     }
   }

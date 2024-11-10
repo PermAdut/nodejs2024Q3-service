@@ -35,9 +35,9 @@ export class TrackController {
       response.status(200).json(track).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
-        response.status(400).send();
+        response.status(400).json('Invalid uuid').send();
       } else if (err.message == 'Track not found') {
-        response.status(404).send();
+        response.status(404).json('Track not found').send();
       }
     }
   }
@@ -50,7 +50,10 @@ export class TrackController {
       response.status(201).json(resBody);
     } catch (err) {
       if (err.message == 'body doest not contain required fields') {
-        response.status(400).send();
+        response
+          .status(400)
+          .json('body doest not contain required fields')
+          .send();
       }
     }
   }
@@ -67,11 +70,14 @@ export class TrackController {
       response.status(200).json(res).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
-        response.status(400).send();
+        response.status(400).json('Invalid uuid').send();
       } else if (err.message == 'Track not found') {
-        response.status(404).send();
+        response.status(404).json('Track not found').send();
       } else if (err.message == 'body doest not contain required fields') {
-        response.status(400).send();
+        response
+          .status(400)
+          .json('body doest not contain required fields')
+          .send();
       }
     }
   }
@@ -83,9 +89,9 @@ export class TrackController {
       response.status(204).json(del);
     } catch (err) {
       if (err.message == 'Invalid uuid') {
-        response.status(400).send();
+        response.status(400).json('Invalid uuid').send();
       } else if (err.message == 'Track not found') {
-        response.status(404).send();
+        response.status(404).json('Track not found').send();
       }
     }
   }
