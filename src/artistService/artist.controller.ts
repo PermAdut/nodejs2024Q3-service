@@ -8,27 +8,26 @@ import {
   Put,
   Delete,
 } from '@nestjs/common';
-import {
-  updateArtist as updateArtistInDB,
-  createArtist,
-  getArtistById as getArtistsByIdFromDB,
-  getArtists as getArtistsFromDB,
-  deleteArtist as deleteArtistFromDB,
-} from 'src/database/db';
+import { ArtistService } from './artist.service';
 import { Request, Response } from 'express';
 import { CreateArtistDto, UpdateArtistDto } from 'src/utils/requestBodies';
 @Controller('artist')
 export class ArtistController {
+  private artistService: ArtistService;
+  constructor() {
+    this.artistService = new ArtistService();
+  }
+
   @Get()
   async getArtists() {
-    const artists = await getArtistsFromDB();
+    const artists = await this.artistService.getArtists();
     return artists;
   }
 
   @Get(':id')
   async getArtistById(@Param() param: any, @Res() response: Response) {
     try {
-      const artist = await getArtistsByIdFromDB(param.id);
+      const artist = await this.artistService.getArtistById(param.id);
       response.status(200).json(artist).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
@@ -43,7 +42,7 @@ export class ArtistController {
   async addArtist(@Req() request: Request, @Res() response: Response) {
     const body = request.body as unknown as CreateArtistDto;
     try {
-      const artist = await createArtist(body);
+      const artist = await this.artistService.createArtist(body);
       response.status(201).json(artist).send();
     } catch (err) {
       if (err.message == 'body doest not contain required fields') {
@@ -63,7 +62,7 @@ export class ArtistController {
   ) {
     const body = request.body as unknown as UpdateArtistDto;
     try {
-      const updatedBody = await updateArtistInDB(param.id, body);
+      const updatedBody = await this.artistService.updateArtist(param.id, body);
       response.status(200).json(updatedBody).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
@@ -82,7 +81,7 @@ export class ArtistController {
   @Delete(':id')
   async deleteArtist(@Param() param: any, @Res() response: Response) {
     try {
-      const deletedArtist = await deleteArtistFromDB(param.id);
+      const deletedArtist = await this.artistService.deleteArtist(param.id);
       response.status(204).json(deletedArtist).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {

@@ -13,43 +13,47 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User{
-  id String @id @default(uuid()) @db.Uuid
-  login String
-  password String
-  version Int
-  createdAt Int
-  updatedAt Int
+model User {
+  id        String @id @default(uuid()) @db.Uuid
+  login     String
+  password  String
+  version   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model Artist{
-  id String @id @default(uuid()) @db.Uuid
-  name String
+model Artist {
+  id     String  @id @default(uuid()) @db.Uuid
+  name   String
   grammy Boolean
+
+  tracks Track[] @relation("ArtistTracks")
+  albums Album[] @relation("ArtistAlbums")
 }
 
-model Album{
-  id String @id @default(uuid()) @db.Uuid
-  name String
-  year Int
-  artistId String?
+model Album {
+  id       String  @id @default(uuid()) @db.Uuid
+  name     String
+  year     Int
+  artistId String? @db.Uuid
 
-  artist   Artist?  @relation(fields: [artistId], references: [id])
+  artist Artist? @relation("ArtistAlbums", fields: [artistId], references: [id])
+  tracks Track[] @relation("AlbumTracks")
 }
 
-model Track{
-  id String @id @default(uuid()) @db.Uuid
-  name String
-  artistId String?
-  albumId String?
+model Track {
+  id       String  @id @default(uuid()) @db.Uuid
+  name     String
+  artistId String? @db.Uuid
+  albumId  String? @db.Uuid
   duration Int
 
-  artist   Artist?  @relation(fields: [artistId], references: [id])
-  album   Album?  @relation(fields: [albumId], references: [id])
+  artist Artist? @relation("ArtistTracks", fields: [artistId], references: [id])
+  album  Album?  @relation("AlbumTracks", fields: [albumId], references: [id])
 }
 
-modeul Favourites{
-  artists String[]
-  albums String[]
-  tracks String[]
+model Favourites {
+  artists String[] @unique() @default([])
+  albums  String[] @unique() @default([])
+  tracks  String[] @unique() @default([])
 }

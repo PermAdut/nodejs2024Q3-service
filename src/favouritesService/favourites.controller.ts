@@ -1,27 +1,24 @@
 import { Controller, Delete, Get, Param, Post, Res } from '@nestjs/common';
 import { Response } from 'express';
-import {
-  addFavAlbum,
-  addFavArtist,
-  addFavTrack,
-  deleteFavsAlbum,
-  deleteFavsArtist,
-  deleteFavsTrack,
-  getFavs,
-} from 'src/database/db';
+import { FavouritesService } from './favourites.service';
 
 @Controller('favs')
 export class FavController {
+  private favService: FavouritesService;
+  constructor() {
+    this.favService = new FavouritesService();
+  }
+
   @Get()
   async getAllFavs() {
-    const favs = await getFavs();
+    const favs = await this.favService.getFavs();
     return favs;
   }
 
   @Post('track/:id')
   async addTrackToFav(@Param() param: any, @Res() response: Response) {
     try {
-      const track = await addFavTrack(param.id);
+      const track = await this.favService.addFavsTrack(param.id);
       response.status(201).json(track).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
@@ -35,7 +32,7 @@ export class FavController {
   @Post('album/:id')
   async addAlbumToFav(@Param() param: any, @Res() response: Response) {
     try {
-      const album = await addFavAlbum(param.id);
+      const album = await this.favService.addFavsAlbum(param.id);
       response.status(201).json(album).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
@@ -49,7 +46,7 @@ export class FavController {
   @Post('artist/:id')
   async addArtistToFav(@Param() param: any, @Res() response: Response) {
     try {
-      const artist = await addFavArtist(param.id);
+      const artist = await this.favService.addFavsArtist(param.id);
       response.status(201).json(artist).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
@@ -63,7 +60,7 @@ export class FavController {
   @Delete('track/:id')
   async deleteTrackFromFav(@Param() param: any, @Res() response: Response) {
     try {
-      const track = await deleteFavsTrack(param.id);
+      const track = await this.favService.deleteFavsTrack(param.id);
       response.status(204).json(track).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
@@ -77,7 +74,7 @@ export class FavController {
   @Delete('album/:id')
   async deleteAlbumFromFav(@Param() param: any, @Res() response: Response) {
     try {
-      const album = await deleteFavsAlbum(param.id);
+      const album = await this.favService.deleteFavsAlbum(param.id);
       response.status(204).json(album).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
@@ -91,7 +88,7 @@ export class FavController {
   @Delete('artist/:id')
   async deleteArtistFromFav(@Param() param: any, @Res() response: Response) {
     try {
-      const artist = await deleteFavsArtist(param.id);
+      const artist = await this.favService.deleteFavsArtist(param.id);
       response.status(204).json(artist).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {

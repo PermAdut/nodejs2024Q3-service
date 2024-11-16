@@ -9,27 +9,26 @@ import {
   Res,
 } from '@nestjs/common';
 import { Response } from 'express';
-import {
-  getUserById as getUserByIdFromDB,
-  getUsers as getUsersFromDB,
-  addUser as addUserToDB,
-  updateUserPass as updateUserFromDB,
-  deleteUser as deleteUserFromDB,
-} from 'src/database/db';
 import { CreateUserDto, UpdatePasswordDto } from 'src/utils/requestBodies';
+import { UserService } from './user.service';
 
 @Controller('user')
 export class UserController {
+  private userService: UserService;
+  constructor() {
+    this.userService = new UserService();
+  }
+
   @Get()
-  async getUser(@Res() response: Response) {
-    const users = await getUsersFromDB();
+  async getUsers(@Res() response: Response) {
+    const users = await this.userService.getUsers();
     response.status(200).json(users).send();
   }
 
   @Get(':id')
   async getUserById(@Param() params: any, @Res() response: Response) {
     try {
-      const user = await getUserByIdFromDB(params.id);
+      const user = await this.userService.getUserById(params.id);
       response.status(200).json(user).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
@@ -44,7 +43,7 @@ export class UserController {
   async addUser(@Req() request: Request, @Res() response: Response) {
     try {
       const body = request.body as unknown as CreateUserDto;
-      const newUser = await addUserToDB(body);
+      const newUser = await this.userService.createUser(body);
       response.status(201).json(newUser).send();
     } catch (err) {
       if (err.message === 'body does not contain required fields') {
@@ -65,7 +64,7 @@ export class UserController {
   ) {
     try {
       const body = request.body as unknown as UpdatePasswordDto;
-      const record = await updateUserFromDB(params.id, body);
+      const record = await this.userService.updateUser(params.id, body);
       response.status(200).json(record).send();
     } catch (err) {
       switch (err.message) {
@@ -87,7 +86,7 @@ export class UserController {
   @Delete(':id')
   async deleteUser(@Res() response: Response, @Param() params: any) {
     try {
-      await deleteUserFromDB(params.id);
+      await this.userService.deleteUser(params.id);
       response.status(204).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {

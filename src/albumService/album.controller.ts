@@ -9,27 +9,25 @@ import {
   Delete,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import {
-  createAlbum,
-  deleteAlbum as deleteAlbumFromDB,
-  getAlbumById as getAlbumByIdFromDB,
-  getAlbums as getAlbumsFromDB,
-  updateAlbum as updateAlbumInDB,
-} from 'src/database/db';
+import { AlbumService } from './album.service';
 import { CreateAlbumDto, UpdateAlbumDto } from 'src/utils/requestBodies';
 
 @Controller('album')
 export class AlbumController {
+  private albumService: AlbumService;
+  constructor() {
+    this.albumService = new AlbumService();
+  }
   @Get()
   async getAlbums() {
-    const albums = await getAlbumsFromDB();
+    const albums = await this.albumService.getAlbums();
     return albums;
   }
 
   @Get(':id')
   async getAlbumById(@Param() param: any, @Res() response: Response) {
     try {
-      const album = await getAlbumByIdFromDB(param.id);
+      const album = await this.albumService.getAlbumById(param.id);
       response.status(200).json(album).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
@@ -44,7 +42,7 @@ export class AlbumController {
   async addAlbum(@Res() response: Response, @Req() request: Request) {
     const body = request.body as unknown as CreateAlbumDto;
     try {
-      const album = await createAlbum(body);
+      const album = await this.albumService.createAlbum(body);
       response.status(201).json(album).send();
     } catch (err) {
       if (err.message == 'body doest not contain required fields') {
@@ -64,7 +62,7 @@ export class AlbumController {
   ) {
     const body = request.body as unknown as UpdateAlbumDto;
     try {
-      const album = await updateAlbumInDB(param.id, body);
+      const album = await this.albumService.updateAlbum(param.id, body);
       response.status(200).json(album).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
@@ -83,7 +81,7 @@ export class AlbumController {
   @Delete(':id')
   async deleteAlbum(@Param() param: any, @Res() response: Response) {
     try {
-      const delAlbum = await deleteAlbumFromDB(param.id);
+      const delAlbum = await this.albumService.deleteAlbum(param.id);
       response.status(204).json(delAlbum).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {

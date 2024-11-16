@@ -9,21 +9,20 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
-import {
-  addTrack as addTrackToDB,
-  deleteTrack as deleteTrackFromDB,
-  getTrackById as getTrackByIdFromDB,
-  getTracks as getTracksFromDB,
-  updateTrack,
-} from 'src/database/db';
 import { Request, Response } from 'express';
 import { CreateTrackDto, UpdateTrackDto } from 'src/utils/requestBodies';
+import { TrackService } from './track.service';
 @Controller('track')
 export class TrackController {
+  private trackService: TrackService;
+  constructor() {
+    this.trackService = new TrackService();
+  }
+
   @Get()
   @HttpCode(200)
   async getTracks() {
-    const tracks = await getTracksFromDB();
+    const tracks = await this.trackService.getTracks();
     return tracks;
   }
 
@@ -31,7 +30,7 @@ export class TrackController {
   async getTrackById(@Param() params: any, @Res() response: Response) {
     const id = params.id;
     try {
-      const track = await getTrackByIdFromDB(id);
+      const track = await this.trackService.getTrackById(id);
       response.status(200).json(track).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
@@ -46,7 +45,7 @@ export class TrackController {
   async addTrack(@Req() request: Request, @Res() response: Response) {
     const body = request.body as unknown as CreateTrackDto;
     try {
-      const resBody = await addTrackToDB(body);
+      const resBody = await this.trackService.createTrack(body);
       response.status(201).json(resBody);
     } catch (err) {
       if (err.message == 'body doest not contain required fields') {
@@ -66,7 +65,7 @@ export class TrackController {
   ) {
     const body = request.body as unknown as UpdateTrackDto;
     try {
-      const res = await updateTrack(param.id, body);
+      const res = await this.trackService.updateTrack(param.id, body);
       response.status(200).json(res).send();
     } catch (err) {
       if (err.message == 'Invalid uuid') {
@@ -85,7 +84,7 @@ export class TrackController {
   @Delete(':id')
   async deleteTrack(@Param() param: any, @Res() response: Response) {
     try {
-      const del = await deleteTrackFromDB(param.id);
+      const del = await this.trackService.deleteTrack(param.id);
       response.status(204).json(del);
     } catch (err) {
       if (err.message == 'Invalid uuid') {
