@@ -8,33 +8,42 @@ export class FavouritesService {
 
   public async getFavs(): Promise<FavoritesResponse> {
     const records = await this.prisma.favourites.findFirst({});
+    if (!records) {
+      return {
+        artists: [],
+        albums: [],
+        tracks: [],
+      };
+    }
     const trackIds = records.tracks;
     const albumIds = records.albums;
-    const artistIds = records.albums;
-    const favsTrack: Track[] = [];
-    const favsAlbums: Album[] = [];
-    const favsArtist: Artist[] = [];
-    trackIds.forEach(async (el) => {
-      favsTrack.push(await this.prisma.track.findUnique({ where: { id: el } }));
-    });
-    albumIds.forEach(async (el) => {
-      favsAlbums.push(
-        await this.prisma.album.findUnique({ where: { id: el } }),
-      );
-    });
-    artistIds.forEach(async (el) => {
-      favsArtist.push(
-        await this.prisma.artist.findUnique({ where: { id: el } }),
-      );
-    });
+    const artistIds = records.artists;
+    const favsTrack: Track[] = await Promise.all(
+      trackIds.map(
+        async (el) => await this.prisma.track.findUnique({ where: { id: el } }),
+      ),
+    );
+
+    const favsAlbums: Album[] = await Promise.all(
+      albumIds.map(
+        async (el) => await this.prisma.album.findUnique({ where: { id: el } }),
+      ),
+    );
+
+    const favsArtist: Artist[] = await Promise.all(
+      artistIds.map(
+        async (el) =>
+          await this.prisma.artist.findUnique({ where: { id: el } }),
+      ),
+    );
     return {
-      artists: favsArtist,
-      albums: favsAlbums,
-      tracks: favsTrack,
+      artists: favsArtist.filter(Boolean),
+      albums: favsAlbums.filter(Boolean),
+      tracks: favsTrack.filter(Boolean),
     };
   }
 
-  public async deleteFavsTrack(id: string): Promise<void> {
+  public async deleteFavsTrack(id: string): Promise<Track> {
     const isMatch = isUUID(id);
     if (!isMatch) {
       throw new Error('Invalid uuid');
@@ -50,12 +59,13 @@ export class FavouritesService {
         },
         data: { tracks: updatedTracks },
       });
+      return track;
     } else {
       throw new Error('Invalid track');
     }
   }
 
-  public async deleteFavsAlbum(id: string): Promise<void> {
+  public async deleteFavsAlbum(id: string): Promise<Album> {
     const isMatch = isUUID(id);
     if (!isMatch) {
       throw new Error('Invalid uuid');
@@ -71,12 +81,13 @@ export class FavouritesService {
         },
         data: { albums: updatedAlbums },
       });
+      return album;
     } else {
       throw new Error('Invalid album');
     }
   }
 
-  public async deleteFavsArtist(id: string): Promise<void> {
+  public async deleteFavsArtist(id: string): Promise<Artist> {
     const isMatch = isUUID(id);
     if (!isMatch) {
       throw new Error('Invalid uuid');
@@ -92,6 +103,7 @@ export class FavouritesService {
         },
         data: { artists: updatedArtists },
       });
+      return artist;
     } else {
       throw new Error('Invalid artist');
     }
@@ -106,7 +118,8 @@ export class FavouritesService {
     if (track) {
       const favs = await this.prisma.favourites.findFirst({});
       favs.tracks.push(track.id);
-      await this.prisma.favourites.updateMany({
+      await this.prisma.favourites.update({
+        where: { albums: favs.albums, artists: favs.artists },
         data: { tracks: favs.tracks },
       });
       return track;
@@ -124,7 +137,8 @@ export class FavouritesService {
     if (artist) {
       const favs = await this.prisma.favourites.findFirst({});
       favs.artists.push(artist.id);
-      await this.prisma.favourites.updateMany({
+      await this.prisma.favourites.update({
+        where: { albums: favs.albums, tracks: favs.tracks },
         data: { artists: favs.artists },
       });
       return artist;
@@ -142,7 +156,8 @@ export class FavouritesService {
     if (album) {
       const favs = await this.prisma.favourites.findFirst({});
       favs.albums.push(album.id);
-      await this.prisma.favourites.updateMany({
+      await this.prisma.favourites.update({
+        where: { artists: favs.artists, tracks: favs.tracks },
         data: { albums: favs.albums },
       });
       return album;

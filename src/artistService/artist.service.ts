@@ -5,9 +5,7 @@ import { CreateArtistDto, UpdateArtistDto } from 'src/utils/requestBodies';
 import { v4 } from 'uuid';
 @Injectable()
 export class ArtistService {
-  private prisma = new PrismaClient({
-    log: ['query', 'info', 'warn', 'error'],
-  });
+  private prisma = new PrismaClient();
 
   public async getArtists() {
     return await this.prisma.artist.findMany({});
@@ -47,7 +45,6 @@ export class ArtistService {
     const artist = await this.prisma.artist.findUnique({ where: { id } });
     if (artist) {
       await this.prisma.artist.delete({ where: { id } });
-      // set null track
       return artist;
     } else {
       throw new Error('Artist not found');

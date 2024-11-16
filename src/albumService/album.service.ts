@@ -5,9 +5,7 @@ import { CreateAlbumDto, UpdateAlbumDto } from 'src/utils/requestBodies';
 import { v4 } from 'uuid';
 Injectable();
 export class AlbumService {
-  private prisma = new PrismaClient({
-    log: ['query', 'info', 'warn', 'error'],
-  });
+  private prisma = new PrismaClient();
 
   public async getAlbums() {
     return await this.prisma.album.findMany({});

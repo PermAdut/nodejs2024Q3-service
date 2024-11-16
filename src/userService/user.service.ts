@@ -15,9 +15,7 @@ let SALT;
 
 Injectable();
 export class UserService {
-  private prisma = new PrismaClient({
-    log: ['query', 'info', 'warn', 'error'],
-  });
+  private prisma = new PrismaClient();
 
   public async createUser(
     user: CreateUserDto,
