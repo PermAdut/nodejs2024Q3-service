@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,43 +7,116 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User{
-  id String @id @default(uuid()) @db.Uuid
-  login String
-  password String
-  version Int
-  createdAt Int
-  updatedAt Int
+model User {
+  idUser               Int                    @id @unique @default(autoincrement())
+  login                String                 @unique
+  password             String
+  registrationSeal     Int
+  passportId           String
+  country              String
+  email                String?
+  telephone            String?
+  notifications        UserNotification[] 
+  notificationSettings Notification_settings?
 }
 
-model Artist{
-  id String @id @default(uuid()) @db.Uuid
-  name String
-  grammy Boolean
+model Notification {
+  idNotification           Int                @id @unique @default(autoincrement())
+  userNotifications        UserNotification[] 
+  notificationType         Int
+  notificationDateCreation DateTime
+  notificationMessage      String
+  notificationDateExpire   DateTime
+  status                   Int
 }
 
-model Album{
-  id String @id @default(uuid()) @db.Uuid
-  name String
-  year Int
-  artistId String?
+model UserNotification {
+  userId         Int
+  notificationId Int
+  user           User         @relation(fields: [userId], references: [idUser])
+  notification   Notification @relation(fields: [notificationId], references: [idNotification])
 
-  artist   Artist?  @relation(fields: [artistId], references: [id])
+  @@id([userId, notificationId])
 }
 
-model Track{
-  id String @id @default(uuid()) @db.Uuid
-  name String
-  artistId String?
-  albumId String?
-  duration Int
-
-  artist   Artist?  @relation(fields: [artistId], references: [id])
-  album   Album?  @relation(fields: [albumId], references: [id])
+model Notification_settings {
+  idNotificationSettings Int     @id @unique @default(autoincrement())
+  emailNotifications     Boolean
+  pushNotifications      Boolean
+  smsNotifications       Boolean
+  user                   User    @relation(fields: [userIdUser], references: [idUser])
+  userIdUser             Int @unique
 }
 
-modeul Favourites{
-  artists String[]
-  albums String[]
-  tracks String[]
+model Booking_service {
+  idBooking         Int      @id @unique @default(autoincrement())
+  flight            Flight   @relation(name: "Booking_serviceToFlight", fields: [idFlight], references: [idFlight])
+  idFlight          Int
+  client            Clients  @relation(name: "ClientBookings", fields: [idUser], references: [idUser])
+  idUser            Int
+  bookDate          DateTime
+  status            Int
+  additionalService String?
+}
+
+model Clients {
+  idUser          Int               @id @unique @default(autoincrement())
+  userHasSale     UserHasSale[]
+  firstName       String
+  secondName      String
+  thirdName       String?
+  passportId      String
+  gender          String?
+  email           String?
+  telephone       String?
+  bookingServices Booking_service[] @relation("ClientBookings")
+}
+
+model Flight {
+  idFlight        Int               @id @unique @default(autoincrement())
+  bookingServices Booking_service[] @relation("Booking_serviceToFlight")
+  saleTickets     Sale_tickets[]
+  flightNum       String
+  dateFlight      DateTime
+  departure       String
+  arrival         String
+  numberOfSeats   Int
+  plane           Plane             @relation(fields: [idPlane], references: [idPlane])
+  idPlane         Int
+}
+
+model Plane {
+  idPlane         Int      @id @unique @default(autoincrement())
+  flights         Flight[]
+  planeType       String
+  planeSeats      Int
+  luggageCapacity Int
+}
+
+model Sale_tickets {
+  idSale           Int           @id @unique @default(autoincrement())
+  airlines         Airlines      @relation(fields: [idAirlines], references: [idAirlines])
+  idAirlines       Int
+  flight           Flight        @relation(fields: [idFlight], references: [idFlight])
+  idFlight         Int
+  dateBuying       DateTime
+  price            Int
+  class            String
+  luggageAvailable Boolean
+  userHasSale      UserHasSale[]
+}
+
+model Airlines {
+  idAirlines  Int            @id @unique @default(autoincrement())
+  saleTickets Sale_tickets[]
+  airlineName String
+  contacts    String
+  telephone   String
+}
+
+model UserHasSale {
+  client      Clients      @relation(fields: [idUser], references: [idUser])
+  idUser      Int          @unique
+  saleTickets Sale_tickets @relation(fields: [idSale], references: [idSale])
+  idSale      Int          @unique
 }
