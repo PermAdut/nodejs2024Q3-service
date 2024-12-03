@@ -1,31 +1,47 @@
-import { Controller, Post, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Res, Get, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { Request, Response } from 'express';
-import { RegistrationDto } from 'src/models/auth.model';
-import { AuthMiddleWare } from 'src/middleware/jwtTokenMiddleware';
-Controller('auth');
+import { Response } from 'express';
+import { RegistrationDto, LoginDto } from 'src/models/auth.model';
+import { ClientProxy, MessagePattern } from '@nestjs/microservices';
+import { Inject } from '@nestjs/common';
+
+@Controller('auth')
 export class AuthController {
-  private authService: AuthService = new AuthService();
+  constructor(
+    private readonly authService: AuthService,
+    @Inject('AUTH_SERVICE') private readonly client: ClientProxy,
+  ) {}
 
   @Post('registration')
-  async registration(req: Request, res: Response) {
-    const body = req.body as unknown as RegistrationDto;
+  async registration(@Body() body: RegistrationDto, @Res() res: Response) {
     try {
-      const user = await this.authService.registrationUser(body);
-      res.status(201).json(user).send();
-    } catch {
-      res.status(404).send();
+      const user = await this.client
+        .send('auth.registration', body)
+        .toPromise();
+      return res.status(HttpStatus.CREATED).json(user);
+    } catch (error) {
+      console.error(error);
+      return res
+        .status(HttpStatus.BAD_REQUEST)
+        .json({ message: error.message });
     }
   }
 
   @Post('login')
-  async login(req: Request, res: Response) {
-    const body = req.body as unknown as RegistrationDto;
+  async login(@Body() body: LoginDto, @Res() res: Response) {
     try {
-      const user = await this.authService.loginUser(body);
-      res.status(201).json(user).send();
-    } catch {
-      res.status(404).send();
+      const user = await this.client.send('auth.login', body).toPromise();
+      return res.status(HttpStatus.OK).json(user);
+    } catch (error) {
+      console.error(error);
+      return res
+        .status(HttpStatus.UNAUTHORIZED)
+        .json({ message: error.message });
     }
+  }
+
+  @Get('secret')
+  async getUsers() {
+    return await this.authService.getAllUsers();
   }
 }

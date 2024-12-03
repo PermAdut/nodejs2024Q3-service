@@ -8,44 +8,14 @@ datasource db {
 }
 
 model User {
-  idUser               Int                    @id @unique @default(autoincrement())
-  login                String                 @unique
-  password             String
-  registrationSeal     Int
-  passportId           String
-  country              String
-  email                String?
-  telephone            String?
-  notifications        UserNotification[] 
-  notificationSettings Notification_settings?
-}
-
-model Notification {
-  idNotification           Int                @id @unique @default(autoincrement())
-  userNotifications        UserNotification[] 
-  notificationType         Int
-  notificationDateCreation DateTime
-  notificationMessage      String
-  notificationDateExpire   DateTime
-  status                   Int
-}
-
-model UserNotification {
-  userId         Int
-  notificationId Int
-  user           User         @relation(fields: [userId], references: [idUser])
-  notification   Notification @relation(fields: [notificationId], references: [idNotification])
-
-  @@id([userId, notificationId])
-}
-
-model Notification_settings {
-  idNotificationSettings Int     @id @unique @default(autoincrement())
-  emailNotifications     Boolean
-  pushNotifications      Boolean
-  smsNotifications       Boolean
-  user                   User    @relation(fields: [userIdUser], references: [idUser])
-  userIdUser             Int @unique
+  idUser           Int     @id @unique @default(autoincrement())
+  login            String  @unique
+  password         String
+  registrationSeal Int
+  passportId       String
+  country          String
+  email            String?
+  telephone        String?
 }
 
 model Booking_service {
