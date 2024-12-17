@@ -6,18 +6,30 @@ import { AuthModule } from './authService/auth.module';
 import { FlightModule } from './flightService/flight.module';
 import { BookingModule } from './bookingService/booking.module';
 import { TransactionModule } from './paymentService/payment.module';
-import { RabbitmqModule } from './rabbitMQ/rabbitmq.module';
-
+import { TransactionService } from './paymentService/payment.service';
+import { AuthService } from './authService/auth.service';
+import { BookingService } from './bookingService/booking.service';
+import { FlightsService } from './flightService/flight.service';
+import { LoggerService } from './utils/logger.service';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import { CustomPrometheusModule } from './prometeus/prometeus.module';
 @Module({
   imports: [
     AuthModule,
     FlightModule,
     BookingModule,
     TransactionModule,
-    RabbitmqModule,
+    CustomPrometheusModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    TransactionService,
+    AuthService,
+    BookingService,
+    FlightsService,
+    LoggerService,
+  ],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {

@@ -13,6 +13,7 @@ model User {
   password         String
   registrationSeal Int
   passportId       String
+  role             String
   country          String
   email            String?
   telephone        String?

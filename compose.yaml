@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+    ports:
+      - "4000:4000"
+    depends_on:
+      - rabbitmq
+      - postgres  
+    environment:
+      DB_HOST: postgres  
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: 123456
+      DB_NAME: Riat
+      DATABASE_URL: postgresql://postgres:123456@postgres:5432/Riat
+      RABBITMQS: amqp://rabbitmq:5672
+      JWT_SECRET_KEY: secret123123
+    command: >
+      sh -c "npx prisma migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"
+
+  app2:  # Второй экземпляр приложения
+    build:
+      context: .
+    ports:
+      - "4001:4000"  # Пробрасываем порт 4001 к 4000 внутри контейнера
+    depends_on:
+      - rabbitmq
+      - postgres  
+    environment:
+      DB_HOST: postgres  
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: 123456
+      DB_NAME: Riat
+      DATABASE_URL: postgresql://postgres:123456@postgres:5432/Riat
+      RABBITMQS: amqp://rabbitmq:5672
+      JWT_SECRET_KEY: secret123123
+    command: >
+      sh -c "npx prisma migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672" 
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5  
+
+  postgres:  
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: Riat
+    volumes:
+      - pg_data:/var/lib/postgresql/data  
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+      - app2  # Добавьте зависимость от второго экземпляра приложения
+
+volumes:
+  pg_data:

@@ -1,16 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
 
-export class CreateAirlineDto {
+export class LoginDto {
   @ApiProperty()
   @IsString()
-  airlineName: string;
+  login: string;
 
   @ApiProperty()
   @IsString()
-  contacts: string;
-
-  @ApiProperty()
-  @IsString()
-  telephone: string;
+  password: string;
 }

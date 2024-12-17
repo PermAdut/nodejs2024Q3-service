@@ -1,26 +1,34 @@
 import { Injectable, Logger, ConflictException } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { Payload } from '@nestjs/microservices';
 
 @Injectable()
 export class TransactionService {
   private readonly logger = new Logger(TransactionService.name);
 
-  @MessagePattern('transaction.process')
+  onModuleInit() {
+    this.logger.log(
+      'TransactionService initialized and ready to process transactions.',
+    );
+  }
+
   async processTransaction(
     @Payload() createTransactionDto: CreateTransactionDto,
   ) {
-    try {
-      this.logger.log(
-        `Transaction Processed: ${JSON.stringify(createTransactionDto)}`,
-      );
-
-      // Here you can add any additional logic for processing the transaction
+    this.logger.log(
+      `Transaction Processed: ${JSON.stringify(createTransactionDto)}`,
+    );
+    if (
+      createTransactionDto.amount &&
+      createTransactionDto.date &&
+      createTransactionDto.transactionId
+    ) {
       return {
         message: 'Transaction processed successfully',
         transactionId: createTransactionDto.transactionId,
       };
-    } catch (error) {
+    } else {
+      this.logger.error('Error processing transaction');
       throw new ConflictException('Error processing transaction');
     }
   }

@@ -7,13 +7,13 @@ import { PrismaClient } from '@prisma/client';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { CreateClientDto } from './dto/create-client.dto';
 import { CreateSaleTicketDto } from './dto/create-sale-ticket.dto';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { Payload } from '@nestjs/microservices';
+import { BuyTicketDto } from './dto/buy_titcket-dto';
 
 @Injectable()
 export class BookingService {
   private prisma = new PrismaClient();
 
-  @MessagePattern('booking.create')
   async createBooking(@Payload() createBookingDto: CreateBookingDto) {
     try {
       const booking = await this.prisma.booking_service.create({
@@ -25,7 +25,6 @@ export class BookingService {
     }
   }
 
-  @MessagePattern('client.create')
   async createClient(@Payload() createClientDto: CreateClientDto) {
     try {
       const client = await this.prisma.clients.create({
@@ -37,7 +36,6 @@ export class BookingService {
     }
   }
 
-  @MessagePattern('saleTicket.create')
   async createSaleTicket(@Payload() createSaleTicketDto: CreateSaleTicketDto) {
     try {
       const saleTicket = await this.prisma.sale_tickets.create({
@@ -49,7 +47,6 @@ export class BookingService {
     }
   }
 
-  @MessagePattern('booking.update')
   async updateBooking(
     @Payload()
     {
@@ -74,7 +71,6 @@ export class BookingService {
     }
   }
 
-  @MessagePattern('booking.delete')
   async deleteBooking(@Payload() idBooking: number) {
     try {
       await this.prisma.booking_service.delete({
@@ -89,12 +85,10 @@ export class BookingService {
     }
   }
 
-  @MessagePattern('bookings.getAll')
   async getAllBookings() {
     return await this.prisma.booking_service.findMany();
   }
 
-  @MessagePattern('booking.getById')
   async getBookingById(@Payload() idBooking: number) {
     const booking = await this.prisma.booking_service.findUnique({
       where: { idBooking },
@@ -103,5 +97,88 @@ export class BookingService {
       throw new NotFoundException('Booking not found');
     }
     return booking;
+  }
+
+  async findFlightsByDepartureDate(departureDate: Date) {
+    const flights = await this.prisma.flight.findMany({
+      where: {
+        dateFlight: departureDate,
+      },
+    });
+
+    if (flights.length === 0) {
+      return { error: 'No flights found for the given departure date' };
+    }
+
+    return flights;
+  }
+
+  async findFlightsByAirline(airlineName: string) {
+    const airline = await this.prisma.airlines.findFirst({
+      where: {
+        airlineName: airlineName,
+      },
+    });
+
+    if (!airline) {
+      return { error: 'Airline not found' };
+    }
+
+    const flights = await this.prisma.sale_tickets.findMany({
+      where: {
+        idAirlines: airline.idAirlines,
+      },
+      include: {
+        flight: true,
+      },
+    });
+
+    if (flights.length === 0) {
+      return { error: 'No flights found for the given airline' };
+    }
+
+    return flights;
+  }
+
+  async findFlightsByDepartureLocation(departure: string) {
+    const flights = await this.prisma.flight.findMany({
+      where: {
+        departure: departure,
+      },
+    });
+    if (flights.length === 0) {
+      return { error: 'No flights found for the given departure location' };
+    }
+
+    return flights;
+  }
+
+  async findFlightsByArrivalLocation(arrival: string) {
+    const flights = await this.prisma.flight.findMany({
+      where: {
+        arrival: arrival,
+      },
+    });
+
+    if (flights.length === 0) {
+      return { error: 'No flights found for the given arrival location' };
+    }
+
+    return flights;
+  }
+
+  async bookSeat(createSeatBookingDto: BuyTicketDto) {
+    const { flightId, clientId, quantity } = createSeatBookingDto;
+    try {
+      const flight = await this.prisma.flight.findUnique({
+        where: { idFlight: flightId },
+      });
+      console.log(flight);
+      return {
+        message: `Booked flight ${flight.departure} to ${flight.arrival}`,
+      };
+    } catch (err) {
+      throw new ConflictException('Error booking the seat');
+    }
   }
 }

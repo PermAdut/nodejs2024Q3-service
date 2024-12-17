@@ -7,35 +7,23 @@ import { PrismaClient } from '@prisma/client';
 import { CreateFlightDto } from './dto/create-flight.dto';
 import { CreatePlaneDto } from './dto/create-plane.dto';
 import { CreateAirlineDto } from './dto/create-airline.dto';
-import { MessagePattern, Payload } from '@nestjs/microservices';
 
 @Injectable()
 export class FlightsService {
   private prisma = new PrismaClient();
 
-  @MessagePattern('flight.create')
-  async createFlight(@Payload() createFlightDto: CreateFlightDto) {
+  async createFlight(createFlightDto: CreateFlightDto) {
     try {
       const flight = await this.prisma.flight.create({
         data: createFlightDto,
       });
       return flight;
     } catch (error) {
-      throw new ConflictException('Error creating flight');
+      throw new ConflictException(error.message);
     }
   }
 
-  @MessagePattern('flight.update')
-  async updateFlight(
-    @Payload()
-    {
-      idFlight,
-      updateFlightDto,
-    }: {
-      idFlight: number;
-      updateFlightDto: CreateFlightDto;
-    },
-  ) {
+  async updateFlight(idFlight: number, updateFlightDto: CreateFlightDto) {
     try {
       const flight = await this.prisma.flight.update({
         where: { idFlight },
@@ -50,8 +38,7 @@ export class FlightsService {
     }
   }
 
-  @MessagePattern('flight.delete')
-  async deleteFlight(@Payload() idFlight: number) {
+  async deleteFlight(idFlight: number) {
     try {
       await this.prisma.flight.delete({
         where: { idFlight },
@@ -65,8 +52,7 @@ export class FlightsService {
     }
   }
 
-  @MessagePattern('plane.create')
-  async createPlane(@Payload() createPlaneDto: CreatePlaneDto) {
+  async createPlane(createPlaneDto: CreatePlaneDto) {
     try {
       const plane = await this.prisma.plane.create({
         data: createPlaneDto,
@@ -77,17 +63,7 @@ export class FlightsService {
     }
   }
 
-  @MessagePattern('plane.update')
-  async updatePlane(
-    @Payload()
-    {
-      idPlane,
-      updatePlaneDto,
-    }: {
-      idPlane: number;
-      updatePlaneDto: CreatePlaneDto;
-    },
-  ) {
+  async updatePlane(idPlane: number, updatePlaneDto: CreatePlaneDto) {
     try {
       const plane = await this.prisma.plane.update({
         where: { idPlane },
@@ -102,8 +78,7 @@ export class FlightsService {
     }
   }
 
-  @MessagePattern('plane.delete')
-  async deletePlane(@Payload() idPlane: number) {
+  async deletePlane(idPlane: number) {
     try {
       await this.prisma.plane.delete({
         where: { idPlane },
@@ -117,8 +92,7 @@ export class FlightsService {
     }
   }
 
-  @MessagePattern('airline.create')
-  async createAirline(@Payload() createAirlineDto: CreateAirlineDto) {
+  async createAirline(createAirlineDto: CreateAirlineDto) {
     try {
       const airline = await this.prisma.airlines.create({
         data: createAirlineDto,
@@ -129,17 +103,7 @@ export class FlightsService {
     }
   }
 
-  @MessagePattern('airline.update')
-  async updateAirline(
-    @Payload()
-    {
-      idAirlines,
-      updateAirlineDto,
-    }: {
-      idAirlines: number;
-      updateAirlineDto: CreateAirlineDto;
-    },
-  ) {
+  async updateAirline(idAirlines: number, updateAirlineDto: CreateAirlineDto) {
     try {
       const airline = await this.prisma.airlines.update({
         where: { idAirlines },
@@ -154,8 +118,7 @@ export class FlightsService {
     }
   }
 
-  @MessagePattern('airline.delete')
-  async deleteAirline(@Payload() idAirlines: number) {
+  async deleteAirline(idAirlines: number) {
     try {
       await this.prisma.airlines.delete({
         where: { idAirlines },
@@ -169,15 +132,15 @@ export class FlightsService {
     }
   }
 
-  @MessagePattern('flights.getAll')
   async getAllFlights() {
     return await this.prisma.flight.findMany();
   }
 
-  @MessagePattern('flight.getById')
-  async getFlightById(@Payload() idFlight: number) {
+  async getFlightById(idFlight: number) {
+    const flightId =
+      typeof idFlight === 'string' ? parseInt(idFlight, 10) : idFlight;
     const flight = await this.prisma.flight.findUnique({
-      where: { idFlight },
+      where: { idFlight: flightId },
     });
     if (!flight) {
       throw new NotFoundException('Flight not found');
@@ -185,13 +148,11 @@ export class FlightsService {
     return flight;
   }
 
-  @MessagePattern('planes.getAll')
   async getAllPlanes() {
     return await this.prisma.plane.findMany();
   }
 
-  @MessagePattern('plane.getById')
-  async getPlaneById(@Payload() idPlane: number) {
+  async getPlaneById(idPlane: number) {
     const plane = await this.prisma.plane.findUnique({
       where: { idPlane },
     });
@@ -201,13 +162,11 @@ export class FlightsService {
     return plane;
   }
 
-  @MessagePattern('airlines.getAll')
   async getAllAirlines() {
     return await this.prisma.airlines.findMany();
   }
 
-  @MessagePattern('airline.getById')
-  async getAirlineById(@Payload() idAirlines: number) {
+  async getAirlineById(idAirlines: number) {
     const airline = await this.prisma.airlines.findUnique({
       where: { idAirlines },
     });
