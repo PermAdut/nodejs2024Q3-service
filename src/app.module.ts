@@ -11,8 +11,10 @@ import { AuthService } from './authService/auth.service';
 import { BookingService } from './bookingService/booking.service';
 import { FlightsService } from './flightService/flight.service';
 import { LoggerService } from './utils/logger.service';
-import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { CustomPrometheusModule } from './prometeus/prometeus.module';
+import { MetricsMiddleware } from './prometeus/metric-middleware';
+import { MetricsService } from './prometeus/metric.service';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 @Module({
   imports: [
     AuthModule,
@@ -20,6 +22,10 @@ import { CustomPrometheusModule } from './prometeus/prometeus.module';
     BookingModule,
     TransactionModule,
     CustomPrometheusModule,
+    ThrottlerModule.forRoot({
+      limit: 10,
+      ttl: 60,
+    }),
   ],
   controllers: [AppController],
   providers: [
@@ -29,10 +35,13 @@ import { CustomPrometheusModule } from './prometeus/prometeus.module';
     BookingService,
     FlightsService,
     LoggerService,
+    MetricsService,
+    ThrottlerGuard,
   ],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(resMiddlware).forRoutes('*');
+    consumer.apply(MetricsMiddleware).forRoutes('*');
   }
 }

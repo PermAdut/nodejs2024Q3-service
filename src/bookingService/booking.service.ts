@@ -170,10 +170,24 @@ export class BookingService {
   async bookSeat(createSeatBookingDto: BuyTicketDto) {
     const { flightId, clientId, quantity } = createSeatBookingDto;
     try {
+      const sale = await this.prisma.sale_tickets.findUnique({
+        where: { idFlight: flightId },
+      });
       const flight = await this.prisma.flight.findUnique({
         where: { idFlight: flightId },
       });
-      console.log(flight);
+      flight.numberOfSeats = flight.numberOfSeats - 1;
+      if (flight.numberOfSeats == 0) {
+        await this.prisma.flight.delete({ where: { idFlight: flightId } });
+        await this.prisma.sale_tickets.delete({
+          where: { idSale: sale.idSale },
+        });
+      } else {
+        await this.prisma.flight.update({
+          where: { idFlight: flightId },
+          data: flight,
+        });
+      }
       return {
         message: `Booked flight ${flight.departure} to ${flight.arrival}`,
       };

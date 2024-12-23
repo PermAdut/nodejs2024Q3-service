@@ -21,14 +21,13 @@ services:
     command: >
       sh -c "npx prisma migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"
 
-  app2:  # Второй экземпляр приложения
+  auth_microservice:
     build:
       context: .
     ports:
-      - "4001:4000"  # Пробрасываем порт 4001 к 4000 внутри контейнера
+      - "4001:4000"  
     depends_on:
       - rabbitmq
-      - postgres  
     environment:
       DB_HOST: postgres  
       DB_PORT: 5432
@@ -38,8 +37,89 @@ services:
       DATABASE_URL: postgresql://postgres:123456@postgres:5432/Riat
       RABBITMQS: amqp://rabbitmq:5672
       JWT_SECRET_KEY: secret123123
+      MICROSERVICE_PORT: 4001  
     command: >
-      sh -c "npx prisma migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"
+      sh -c "node dist/main.js auth_queue"  
+
+  payment_microservice:
+    build:
+      context: .
+    ports:
+      - "4002:4000"  
+    depends_on:
+      - rabbitmq
+    environment:
+      DB_HOST: postgres  
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: 123456
+      DB_NAME: Riat
+      DATABASE_URL: postgresql://postgres:123456@postgres:5432/Riat
+      RABBITMQS: amqp://rabbitmq:5672
+      JWT_SECRET_KEY: secret123123
+      MICROSERVICE_PORT: 4002  
+    command: >
+      sh -c "node dist/main.js payment_queue" 
+
+  flights_microservice:
+    build:
+      context: .
+    ports:
+      - "4003:4000"  
+    depends_on:
+      - rabbitmq
+    environment:
+      DB_HOST: postgres  
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: 123456
+      DB_NAME: Riat
+      DATABASE_URL: postgresql://postgres:123456@postgres:5432/Riat
+      RABBITMQS: amqp://rabbitmq:5672
+      JWT_SECRET_KEY: secret123123
+      MICROSERVICE_PORT: 4003  
+    command: >
+      sh -c "node dist/main.js flights_queue"  
+
+  booking_microservice:
+    build:
+      context: .
+    ports:
+      - "4004:4000"  
+    depends_on:
+      - rabbitmq
+    environment:
+      DB_HOST: postgres  
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: 123456
+      DB_NAME: Riat
+      DATABASE_URL: postgresql://postgres:123456@postgres:5432/Riat
+      RABBITMQS: amqp://rabbitmq:5672
+      JWT_SECRET_KEY: secret123123
+      MICROSERVICE_PORT: 4004  
+    command: >
+      sh -c "node dist/main.js booking_queue"
+      
+  booking_microservice_2:
+    build:
+      context: .
+    ports:
+      - "4005:4000"  
+    depends_on:
+      - rabbitmq
+    environment:
+      DB_HOST: postgres  
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: 123456
+      DB_NAME: Riat
+      DATABASE_URL: postgresql://postgres:123456@postgres:5432/Riat
+      RABBITMQS: amqp://rabbitmq:5672
+      JWT_SECRET_KEY: secret123123
+      MICROSERVICE_PORT: 4005  
+    command: >
+      sh -c "node dist/main.js booking_queue"        
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -62,7 +142,7 @@ services:
       POSTGRES_DB: Riat
     volumes:
       - pg_data:/var/lib/postgresql/data  
-
+      
   nginx:
     image: nginx:latest
     ports:
@@ -71,7 +151,22 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - app
-      - app2  # Добавьте зависимость от второго экземпляра приложения
+ 
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - D:\ProgFiles\prometheus-2.53.3.windows-amd64\prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'  
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin      
 
 volumes:
   pg_data:

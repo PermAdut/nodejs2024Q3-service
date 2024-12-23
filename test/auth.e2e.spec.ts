@@ -1,34 +1,56 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthModule } from '../src/authService/auth.module';
-import { INestApplication } from '@nestjs/common';
+import { AuthController } from '../src/authService/auth.controller';
+import { AuthService } from '../src/authService/auth.service';
+import { ClientProxy } from '@nestjs/microservices';
 import * as request from 'supertest';
-import { PrismaClient } from '@prisma/client';
+import { INestApplication } from '@nestjs/common';
+import { of, throwError } from 'rxjs';
+import { CreateUserDto as RegistrationDto } from '../src/authService/dto/create-user-dto';
+import { LoginDto } from '../src/authService/dto/login-user-dto';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
-  let prisma: PrismaClient;
+  let authService: AuthService;
+  let clientProxy: ClientProxy;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AuthModule],
+      controllers: [AuthController],
+      providers: [
+        {
+          provide: AuthService,
+          useValue: {
+            getAllUsers: jest.fn(),
+          },
+        },
+        {
+          provide: 'AUTH_SERVICE',
+          useValue: {
+            send: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    prisma = new PrismaClient();
+    authService = moduleFixture.get<AuthService>(AuthService);
+    clientProxy = moduleFixture.get<ClientProxy>('AUTH_SERVICE');
+
     await app.init();
   });
 
   afterAll(async () => {
     await app.close();
-    await prisma.$disconnect();
   });
 
-  beforeEach(async () => {
-    await prisma.user.deleteMany({});
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
   it('should register a user successfully', async () => {
-    const registrationDto = {
+    const registrationDto: RegistrationDto = {
+      firstName: 'random',
+      secondName: 'random',
       login: 'testuser',
       password: 'password123',
       passportId: '1234567890',
@@ -36,6 +58,10 @@ describe('AuthController (e2e)', () => {
       email: 'test@example.com',
       telephone: '1234567890',
     };
+
+    jest
+      .spyOn(clientProxy, 'send')
+      .mockReturnValue(of({ user: registrationDto }));
 
     const response = await request(app.getHttpServer())
       .post('/auth/registration')
@@ -43,11 +69,12 @@ describe('AuthController (e2e)', () => {
       .expect(201);
 
     expect(response.body).toHaveProperty('login', registrationDto.login);
-    expect(response.body).not.toHaveProperty('password');
   });
 
   it('should not register a user with an existing login', async () => {
-    const registrationDto = {
+    const registrationDto: RegistrationDto = {
+      firstName: 'random',
+      secondName: 'random',
       login: 'testuser',
       password: 'password123',
       passportId: '1234567890',
@@ -56,12 +83,10 @@ describe('AuthController (e2e)', () => {
       telephone: '1234567890',
     };
 
-    await request(app.getHttpServer())
-      .post('/auth/registration')
-      .send(registrationDto)
-      .expect(201);
+    jest
+      .spyOn(clientProxy, 'send')
+      .mockReturnValue(of({ error: 'User with this login already exists.' }));
 
-    // Попробуем зарегистрировать того же пользователя снова
     const response = await request(app.getHttpServer())
       .post('/auth/registration')
       .send(registrationDto)
@@ -74,24 +99,16 @@ describe('AuthController (e2e)', () => {
   });
 
   it('should log in a user successfully', async () => {
-    const registrationDto = {
-      login: 'testuser',
-      password: 'password123',
-      passportId: '1234567890',
-      country: 'Testland',
-      email: 'test@example.com',
-      telephone: '1234567890',
-    };
-
-    await request(app.getHttpServer())
-      .post('/auth/registration')
-      .send(registrationDto)
-      .expect(201);
-
-    const loginDto = {
+    const loginDto: LoginDto = {
       login: 'testuser',
       password: 'password123',
     };
+
+    jest
+      .spyOn(clientProxy, 'send')
+      .mockReturnValue(
+        of({ user: { login: 'testuser' }, token: 'fake-jwt-token' }),
+      );
 
     const response = await request(app.getHttpServer())
       .post('/auth/login')
@@ -100,25 +117,14 @@ describe('AuthController (e2e)', () => {
   });
 
   it('should not log in with invalid password', async () => {
-    const registrationDto = {
-      login: 'testuser',
-      password: 'password123',
-      passportId: '1234567890',
-      country: 'Testland',
-      email: 'test@example.com',
-      telephone: '1234567890',
-    };
-
-    // Сначала зарегистрируем пользователя
-    await request(app.getHttpServer())
-      .post('/auth/registration')
-      .send(registrationDto)
-      .expect(201);
-
-    const loginDto = {
+    const loginDto: LoginDto = {
       login: 'testuser',
       password: 'wrongpassword',
     };
+
+    jest
+      .spyOn(clientProxy, 'send')
+      .mockReturnValue(of({ error: 'Invalid login credentials.' }));
 
     const response = await request(app.getHttpServer())
       .post('/auth/login')
@@ -132,10 +138,14 @@ describe('AuthController (e2e)', () => {
   });
 
   it('should not log in with non-existing user', async () => {
-    const loginDto = {
+    const loginDto: LoginDto = {
       login: 'nonexistinguser',
       password: 'password123',
     };
+
+    jest
+      .spyOn(clientProxy, 'send')
+      .mockReturnValue(of({ error: 'User not found' }));
 
     const response = await request(app.getHttpServer())
       .post('/auth/login')

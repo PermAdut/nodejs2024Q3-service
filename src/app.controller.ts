@@ -34,6 +34,8 @@ export class AppController {
       }
       const user = await this.authService.registrationUser(body);
       this.logger.log(`User registered: ${user.email}`);
+      const { login, password, role, country, ...unreleasedBody } = body;
+      await this.bookingService.createClient(unreleasedBody);
       return { user };
     } catch (err) {
       this.logger.error(`Registration error: ${err.message}`);
@@ -147,6 +149,14 @@ export class AppController {
 
   @MessagePattern('bookTicket')
   async bookTicker(@Body() createTicketDto: BuyTicketDto) {
-    return await this.bookingService.bookSeat(createTicketDto);
+    try {
+      this.logger.log('Booking a ticket...');
+      const book = await this.bookingService.bookSeat(createTicketDto);
+      return book;
+    } catch (err) {
+      return {
+        error: 'Error booking ticket',
+      };
+    }
   }
 }

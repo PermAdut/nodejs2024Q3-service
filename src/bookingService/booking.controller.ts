@@ -9,6 +9,7 @@ import {
   Inject,
   Res,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { CreateBookingDto } from './dto/create-booking.dto';
@@ -18,6 +19,9 @@ import { BookingService } from './booking.service';
 import { Response } from 'express';
 import { firstValueFrom } from 'rxjs';
 import { BuyTicketDto } from './dto/buy_titcket-dto';
+import { Roles } from '../authService/roles-decorator';
+import { JwtAuthGuard } from '../authService/jwt.auth.guard';
+import { RolesGuard } from '../authService/roles-guard';
 
 @Controller('booking')
 export class BookingController {
@@ -31,6 +35,8 @@ export class BookingController {
     return await this.bookingService.createBooking(createBookingDto);
   }
 
+  @Roles('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('create-client')
   async createClient(@Body() createClientDto: CreateClientDto) {
     return await this.bookingService.createClient(createClientDto);
@@ -137,8 +143,19 @@ export class BookingController {
   }
 
   @Post('book-seat')
-  async bookSeat(@Body() createSeatBookingDto: BuyTicketDto) {
-    return await this.bookingService.bookSeat(createSeatBookingDto);
+  async bookSeat(
+    @Body() createSeatBookingDto: BuyTicketDto,
+    @Res() res: Response,
+  ) {
+    const book = await firstValueFrom(
+      this.client.send('bookTicket', createSeatBookingDto),
+    );
+    if (book.error) {
+      return res
+        .status(HttpStatus.CONFLICT)
+        .json({ message: 'Error booking ticket' });
+    }
+    return res.status(HttpStatus.CREATED).json(book);
   }
 
   @Get('health')

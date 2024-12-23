@@ -53,7 +53,6 @@ export class AuthController {
     try {
       const response = await firstValueFrom(this.client.send('login', body));
 
-      // Проверяем, есть ли ошибка в ответе
       if (response.error) {
         if (response.error === 'Invalid login credentials.') {
           return res.status(HttpStatus.UNAUTHORIZED).json({
@@ -65,9 +64,7 @@ export class AuthController {
           });
         }
       }
-      return res.status(HttpStatus.OK).json({
-        user: response.user,
-      });
+      return res.status(HttpStatus.OK).json(response.user);
     } catch (error) {
       console.error('Login error:', error);
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({

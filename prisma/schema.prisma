@@ -67,9 +67,9 @@ model Plane {
 model Sale_tickets {
   idSale           Int           @id @unique @default(autoincrement())
   airlines         Airlines      @relation(fields: [idAirlines], references: [idAirlines])
-  idAirlines       Int
+  idAirlines       Int           @unique
   flight           Flight        @relation(fields: [idFlight], references: [idFlight])
-  idFlight         Int
+  idFlight         Int           @unique
   dateBuying       DateTime
   price            Int
   class            String

@@ -16,11 +16,11 @@ describe('BookingService', () => {
   let app: INestApplication;
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [BookingService, FlightsService], // Добавьте FlightsService сюда
+      providers: [BookingService, FlightsService],
     }).compile();
 
     bookingService = module.get<BookingService>(BookingService);
-    flightService = module.get<FlightsService>(FlightsService); // Инициализация flightService
+    flightService = module.get<FlightsService>(FlightsService);
     prisma = new PrismaClient();
     app = module.createNestApplication();
     await prisma.sale_tickets.deleteMany({});
@@ -168,8 +168,6 @@ describe('BookingService', () => {
       };
 
       await flightService.createFlight(flight);
-
-      // Имитация ответа от клиента
       const mockFlights = [flight];
 
       const response = await request(app.getHttpServer())
@@ -200,7 +198,7 @@ describe('BookingService', () => {
 
       const flight: CreateFlightDto = {
         flightNum: '14',
-        dateFlight: new Date('2023-10-01'),
+        dateFlight: new Date('2024-12-20T10:57:03.590Z'),
         departure: 'Minsk',
         arrival: 'Brest',
         numberOfSeats: 100,
@@ -208,8 +206,6 @@ describe('BookingService', () => {
       };
 
       await flightService.createFlight(flight);
-
-      // Имитация ответа от клиента
       const mockFlights = [flight];
 
       const response = await request(app.getHttpServer())
