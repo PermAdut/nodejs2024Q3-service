@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  idUser           Int     @id @unique @default(autoincrement())
+  login            String  @unique
+  password         String
+  registrationSeal Int
+  passportId       String
+  role             String
+  country          String
+  email            String?
+  telephone        String?
+}
+
+model Booking_service {
+  idBooking         Int      @id @unique @default(autoincrement())
+  flight            Flight   @relation(name: "Booking_serviceToFlight", fields: [idFlight], references: [idFlight])
+  idFlight          Int
+  client            Clients  @relation(name: "ClientBookings", fields: [idUser], references: [idUser])
+  idUser            Int
+  bookDate          DateTime
+  status            Int
+  additionalService String?
+}
+
+model Clients {
+  idUser          Int               @id @unique @default(autoincrement())
+  userHasSale     UserHasSale[]
+  firstName       String
+  secondName      String
+  thirdName       String?
+  passportId      String
+  gender          String?
+  email           String?
+  telephone       String?
+  bookingServices Booking_service[] @relation("ClientBookings")
+}
+
+model Flight {
+  idFlight        Int               @id @unique @default(autoincrement())
+  bookingServices Booking_service[] @relation("Booking_serviceToFlight")
+  saleTickets     Sale_tickets[]
+  flightNum       String
+  dateFlight      DateTime
+  departure       String
+  arrival         String
+  numberOfSeats   Int
+  plane           Plane             @relation(fields: [idPlane], references: [idPlane])
+  idPlane         Int
+}
+
+model Plane {
+  idPlane         Int      @id @unique @default(autoincrement())
+  flights         Flight[]
+  planeType       String
+  planeSeats      Int
+  luggageCapacity Int
+}
+
+model Sale_tickets {
+  idSale           Int           @id @unique @default(autoincrement())
+  airlines         Airlines      @relation(fields: [idAirlines], references: [idAirlines])
+  idAirlines       Int           @unique
+  flight           Flight        @relation(fields: [idFlight], references: [idFlight])
+  idFlight         Int           @unique
+  dateBuying       DateTime
+  price            Int
+  class            String
+  luggageAvailable Boolean
+  userHasSale      UserHasSale[]
+}
+
+model Airlines {
+  idAirlines  Int            @id @unique @default(autoincrement())
+  saleTickets Sale_tickets[]
+  airlineName String
+  contacts    String
+  telephone   String
+}
+
+model UserHasSale {
+  client      Clients      @relation(fields: [idUser], references: [idUser])
+  idUser      Int          @unique
+  saleTickets Sale_tickets @relation(fields: [idSale], references: [idSale])
+  idSale      Int          @unique
+}
